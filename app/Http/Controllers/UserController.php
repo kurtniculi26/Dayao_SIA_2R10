@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Http\Response;
 
+
 class UserController extends Controller
 {
+    use ApiResponser;
     private $request;
 
     public function __construct(Request $request) {
@@ -15,91 +18,64 @@ class UserController extends Controller
     }
     public function index(){
         $users = User::all();
-        return response()->json($users, 200);
+        return $this->successResponse($user);
     }
     public function getUsers(){
         $users = User::all();
         return response()->json($users, 200);
+        return $this->successResponse($user);
+    }
+    public function show($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            // User found
+            return response()->json(['user' => $user], Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            // No such user
+            return response()->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
     }
     public function add(Request $request){
         $rules = [
             'username' => 'required|max:20',
             'password' => 'required|max:20',
+            'gender' => 'required|in:Male,Female'
         ];
 
         $this->validate($request, $rules);
 
         $user = User::create($request->all());
 
-        return response()->json($user, 200);
+        return $this->successResponse($user, Response::HTTP_CREATED);
     }
     public function update(Request $request, $id) {
+        $rules = [
+            'username' => 'required|max:20',
+            'password' => 'required|max:20',
+            'gender' => 'required|in:Male,Female'
+        ];
+        
+        $this->validate($request, $rules);
         $user = User::findOrFail($id);
 
-        // Keep the original created_at timestamp
-        $originalCreatedAt = $user->created_at;
+        $user->fill($request->all());
 
-        $user->update($request->all());
-
-        // Restore the original created_at timestamp
-        $user->created_at = $originalCreatedAt;
-
-        // Update the updated_at timestamp
-        $user->touch();
-
-        return response()->json($user, 200);
-    }
-    public function partialUpdate(Request $request, $id){
-        $user = User::findOrFail($id);
-
-        // Keep the original created_at timestamp
-        $originalCreatedAt = $user->created_at;
-
-        // Update only the specified fields
-        $user->update($request->only(['username', 'password']));
-
-        // Restore the original created_at timestamp
-        $user->created_at = $originalCreatedAt;
-
-        // Save the changes
-        $user->save();
-
-        return response()->json($user, 200);
-    }
-    public function headUser($id) {
-        $user = User::find($id);
-
-        if ($user) {
-            // User found
-            return response()->json(['message' => 'User found'], 200);
-        } else {
-            // No such user
-            return response()->json(['message' => 'No such user'], 404);
+        //if there are no changes
+        if ($user->isClean()) {
+            return $this->errorResponse('At least one value must change', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
+        $user->save();
+        return $this->successResponse($user);
     }
     public function delete($id) {
-        $user = User::find($id);
-
-        if ($user) {
-            // User found, display message
+        try {
+            $user = User::findOrFail($id);
             $user->delete();
-            return response()->json(['message' => 'User has been successfully deleted'], 200);
-        } else {
-            // No such user, return a 404 response
-            return response()->json(['message' => 'No such user'], 404);
+            return $this->successResponse('User deleted successfully');
+        } catch (ModelNotFoundException $exception) {
+            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND);
         }
-
-        // Proceed with deletion after displaying the message
-    }
-
-    public function options(){
-        // You can customize the response headers here if needed
-
-        return response('', 200);
-    }
-    public function show($id) {
-        $user = User::findOrFail($id);
-
-        return response()->json($user, 200);
     }
 }
