@@ -23,7 +23,7 @@ $router->get('/users/{id}', ['uses' => 'UserController@show']);
 $router->post('/users', ['uses' => 'UserController@add']); // good
 // Add routes for PUT, PATCH, and HEAD methods
 $router->put('/users/{id}', ['uses' => 'UserController@update']); //does the job but changes create date
-$router->patch('/users/{id}', ['uses' => 'UserController@partialUpdate']); //updates all
+$router->patch('/users/{id}', ['uses' => 'UserController@update']); //updates all
 
 // Additional routes for demonstration purposes
 $router->delete('/users/{id}', ['uses' => 'UserController@delete']); //

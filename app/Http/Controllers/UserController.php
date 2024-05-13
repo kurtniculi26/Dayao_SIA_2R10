@@ -13,30 +13,37 @@ class UserController extends Controller
     use ApiResponser;
     private $request;
 
-    public function __construct(Request $request) {
+    public function __construct(Request $request)
+    {
         $this->request = $request;
     }
-    public function index(){
+
+    public function index()
+    {
         $users = User::all();
-        return $this->successResponse($user);
+        return $this->successResponse($users);
     }
-    public function getUsers(){
+
+    public function getUsers()
+    {
         $users = User::all();
-        return response()->json($users, 200);
-        return $this->successResponse($user);
+        return $this->successResponse($users);
     }
+
     public function show($id)
     {
         try {
             $user = User::findOrFail($id);
             // User found
-            return response()->json(['user' => $user], Response::HTTP_OK);
+            return $this->successResponse($user);
         } catch (ModelNotFoundException $e) {
             // No such user
-            return response()->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('User not found', Response::HTTP_NOT_FOUND);
         }
     }
-    public function add(Request $request){
+
+    public function add(Request $request)
+    {
         $rules = [
             'username' => 'required|max:20',
             'password' => 'required|max:20',
@@ -49,13 +56,15 @@ class UserController extends Controller
 
         return $this->successResponse($user, Response::HTTP_CREATED);
     }
-    public function update(Request $request, $id) {
+
+    public function update(Request $request, $id)
+    {
         $rules = [
             'username' => 'required|max:20',
             'password' => 'required|max:20',
             'gender' => 'required|in:Male,Female'
         ];
-        
+
         $this->validate($request, $rules);
         $user = User::findOrFail($id);
 
@@ -69,7 +78,9 @@ class UserController extends Controller
         $user->save();
         return $this->successResponse($user);
     }
-    public function delete($id) {
+    
+    public function delete($id)
+    {
         try {
             $user = User::findOrFail($id);
             $user->delete();
